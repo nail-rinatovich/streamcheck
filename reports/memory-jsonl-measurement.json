@@ -1,0 +1,12 @@
+{
+  "format": "jsonl",
+  "file_bytes": 268436026,
+  "hard_memory_limit_bytes": 67108864,
+  "peak_process_committed_bytes": 54394880,
+  "rows": 248782,
+  "invalid_rows": 248,
+  "elapsed_seconds": 5.973,
+  "complete": true,
+  "exit_code": 2,
+  "platform": "win32"
+}

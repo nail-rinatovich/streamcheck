@@ -1,0 +1,21 @@
+const $=id=>document.getElementById(id);
+const example={columns:[{name:'id',type:'integer',required:true,min:1},{name:'email',type:'string',required:true,pattern:'^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$'},{name:'age',type:'integer',required:true,min:0,max:120},{name:'active',type:'boolean',required:true}],allow_extra:false};
+$('schema').value=JSON.stringify(example,null,2);
+let controller,report;
+$('file').addEventListener('change',()=>{const f=$('file').files[0];if(!f)return;$('filename').textContent=`${f.name} · ${(f.size/1048576).toFixed(2)} MiB`;$('format').value=/\.(jsonl|ndjson)$/i.test(f.name)?'jsonl':'csv';});
+$('example').onclick=()=>{const blob=new Blob(['id,email,age,active\n1,alice@example.com,29,true\n2,broken,170,true\n3,bob@example.com,35,false\n'],{type:'text/csv'});save(blob,'example.csv');$('schema').value=JSON.stringify(example,null,2);};
+$('cancel').onclick=()=>controller?.abort();
+function save(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
+$('download').onclick=()=>save(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),'streamcheck-report.json');
+function cell(row,value,tag='td'){const c=document.createElement(tag);c.textContent=value;row.append(c);}
+function render(r){
+ report=r;$('stats').replaceChildren();
+ for(const [v,l]of [[r.rows,'Строк прочитано'],[r.invalid_rows,'Строк с ошибками'],[r.errors,'Нарушений правил'],[`${(r.bytes_read/1048576).toFixed(1)} MiB`,'Данных обработано']]){const d=document.createElement('div');d.className='stat';const n=document.createElement('strong');n.textContent=v;const s=document.createElement('span');s.textContent=l;d.append(n,s);$('stats').append(d);}
+ $('stats').hidden=false;const t=document.createElement('table'),head=t.createTHead().insertRow();for(const h of ['Колонка','Пусто','Тип','Диапазон','Шаблон','Лишние'])cell(head,h,'th');const body=t.createTBody();for(const [name,c]of Object.entries(r.columns)){const row=body.insertRow();for(const v of [name,c.missing,c.type,c.range,c.pattern,c.extra])cell(row,v);}$('table').replaceChildren(t);
+ $('details').hidden=!r.samples.length;$('samples').textContent=r.samples.map(s=>`Строка ${s.row} · ${s.column} · ${s.rule}`).join('\n');$('download').hidden=false;
+}
+$('form').onsubmit=async e=>{
+ e.preventDefault();let schema;try{schema=JSON.stringify(JSON.parse($('schema').value));if(new TextEncoder().encode(schema).length>32768)throw Error('Схема превышает 32 KiB');if(/[^\x20-\x7e]/.test(schema))schema=schema.replace(/[^\x20-\x7e]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'));}catch(err){$('status').textContent='Проверьте JSON-схему';$('message').textContent=err.message;return;}
+ controller=new AbortController();$('submit').disabled=true;$('cancel').hidden=false;$('result').setAttribute('aria-busy','true');$('status').textContent='Проверяем поток…';$('message').textContent='Файл читается последовательно. Отчёт появится после завершения. Отмена прервёт запрос.';for(const id of ['stats','details','download'])$(id).hidden=true;$('table').replaceChildren();
+ const start=performance.now();try{const headers={'X-Schema':schema,'Content-Type':'application/octet-stream'};if($('token').value)headers.Authorization='Bearer '+$('token').value;const res=await fetch('/api/validate?format='+$('format').value,{method:'POST',headers,body:$('file').files[0],signal:controller.signal});const data=await res.json();if(data.report)render(data.report);if(!res.ok)throw Error(data.error||`HTTP ${res.status}`);render(data);$('status').textContent=data.invalid_rows?'Проверка завершена: найдены ошибки':'Схема соблюдена';$('message').textContent=`${data.valid_rows.toLocaleString('ru')} корректных строк. Ошибки разбора: ${data.parse_errors}. Обработка на сервере: ${data.duration_ms} мс. Вместе с передачей: ${((performance.now()-start)/1000).toFixed(1)} с.`;}catch(err){$('status').textContent=err.name==='AbortError'?'Проверка отменена':'Проверка не завершена';$('message').textContent=err.name==='AbortError'?'Запрос прерван. Можно выбрать другой файл.':err.message;}finally{$('submit').disabled=false;$('cancel').hidden=true;$('result').setAttribute('aria-busy','false');}
+};

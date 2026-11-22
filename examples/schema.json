@@ -1,0 +1,1 @@
+{"columns":[{"name":"id","type":"integer","required":true,"min":1},{"name":"email","type":"string","required":true,"pattern":"^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"},{"name":"age","type":"integer","required":true,"min":0,"max":120},{"name":"active","type":"boolean","required":true}],"allow_extra":false}

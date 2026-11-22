@@ -1,0 +1,12 @@
+# TYPE streamcheck_requests_total counter
+streamcheck_requests_total 656
+# TYPE streamcheck_rejected_total counter
+streamcheck_rejected_total 678
+# TYPE streamcheck_failures_total counter
+streamcheck_failures_total 0
+# TYPE streamcheck_rows_total counter
+streamcheck_rows_total 656313
+# TYPE streamcheck_bytes_total counter
+streamcheck_bytes_total 687169763
+# TYPE streamcheck_active gauge
+streamcheck_active 0

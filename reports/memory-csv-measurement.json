@@ -1,0 +1,12 @@
+{
+  "format": "csv",
+  "file_bytes": 268436418,
+  "hard_memory_limit_bytes": 67108864,
+  "peak_process_committed_bytes": 54489088,
+  "rows": 256386,
+  "invalid_rows": 256,
+  "elapsed_seconds": 4.653,
+  "complete": true,
+  "exit_code": 2,
+  "platform": "win32"
+}
